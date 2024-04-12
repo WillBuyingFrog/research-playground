@@ -27,19 +27,23 @@ def create_downsample_mot17_structure(target_root, origin_root):
 
 
 
-def downsample_mot17_sequence(origin_seq_root, target_seq_root, downsample_ratio=3.0):
+def downsample_mot17_sequence(origin_seq_root, target_seq_root,
+                               downsample_ratio=3.0, txt_only=False):
 
     # 第一步：将origin_seq_root代表的MOT17 sequence中的图片，长宽各压缩downsample_ratio倍后，保存到target_seq_root中
     # 保证origin_seq_root和target_seq_root下的文件夹结构完全一致，即origin_seq_root下，以MOT17格式组织的img1, gt（这两个一定有）, det（如果有）文件夹结构一定存在
     img1_folder = os.path.join(origin_seq_root, 'img1')
     target_img1_folder = os.path.join(target_seq_root, 'img1')
-    for img_name in os.listdir(img1_folder):
-        img_path = os.path.join(img1_folder, img_name)
-        target_img_path = os.path.join(target_img1_folder, img_name)
-        # 读取图片，将图片压缩downsample_ratio倍
-        img = cv2.imread(img_path)
-        img = cv2.resize(img, (int(img.shape[1] / downsample_ratio), int(img.shape[0] / downsample_ratio)))
-        cv2.imwrite(target_img_path, img)
+    if txt_only:
+        print(f'Only rewriting txt file, skipping images')
+    else:
+        for img_name in os.listdir(img1_folder):
+            img_path = os.path.join(img1_folder, img_name)
+            target_img_path = os.path.join(target_img1_folder, img_name)
+            # 读取图片，将图片压缩downsample_ratio倍
+            img = cv2.imread(img_path)
+            img = cv2.resize(img, (int(img.shape[1] / downsample_ratio), int(img.shape[0] / downsample_ratio)))
+            cv2.imwrite(target_img_path, img)
 
     # 第二步：将origin_seq_root代表的MOT17 sequence中的gt文件夹中的gt文件，压缩downsample_ratio倍后，保存到target_seq_root中
 
@@ -55,11 +59,11 @@ def downsample_mot17_sequence(origin_seq_root, target_seq_root, downsample_ratio
             with open(target_gt_path, 'w') as f:
                 for line in lines:
                     line = line.strip().split(',')
-                    # 对坐标的downsample结果都保留一位小数再转成str
-                    line[2] = str(round(float(line[2]) / downsample_ratio, 1))
-                    line[3] = str(round(float(line[3]) / downsample_ratio, 1))
-                    line[4] = str(round(float(line[4]) / downsample_ratio, 1))
-                    line[5] = str(round(float(line[5]) / downsample_ratio, 1))
+                    # 对坐标的downsample结果都保留int
+                    line[2] = str(int(int(line[2]) / downsample_ratio))
+                    line[3] = str(int(int(line[3]) / downsample_ratio))
+                    line[4] = str(int(int(line[4]) / downsample_ratio))
+                    line[5] = str(int(int(line[5]) / downsample_ratio))
                     f.write(','.join(line) + '\n')
 
     # 第三步：将origin_seq_root代表的MOT17 sequence中的det文件夹中的det文件，压缩downsample_ratio倍后，保存到target_seq_root中
@@ -85,6 +89,7 @@ def downsample_mot17_sequence(origin_seq_root, target_seq_root, downsample_ratio
     # 除了图像长宽需要改，剩下的都不需要
     seqinfo_path = os.path.join(origin_seq_root, 'seqinfo.ini')
     target_seqinfo_path = os.path.join(target_seq_root, 'seqinfo.ini')
+    print(f'Writing seqinfo to {target_seqinfo_path}')
     with open(seqinfo_path, 'r') as f:
         lines = f.readlines()
         with open(target_seqinfo_path, 'w') as f1:
@@ -106,6 +111,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--origin_root', type=str, default='/Users/frog_wch/playground/Research/Datasets/MOT17-test')
     parser.add_argument('--target_root', type=str, default='/Users/frog_wch/playground/Research/Datasets/MOT17-test-downsample3.0')
+    parser.add_argument('--downsample_ratio', type=float, default=3.0)
+    parser.add_argument('--txt_only', action='store_true')
 
     args = parser.parse_args()
 
@@ -118,5 +125,6 @@ if __name__ == '__main__':
             if seq.startswith('MOT17-'):
                 origin_seq_root = os.path.join(args.origin_root, phase, seq)
                 target_seq_root = os.path.join(args.target_root, phase, seq)
-                downsample_mot17_sequence(origin_seq_root, target_seq_root, downsample_ratio=3.0)
+                downsample_mot17_sequence(origin_seq_root, target_seq_root,
+                                           downsample_ratio=args.downsample_ratio, txt_only=args.txt_only)
                 print('Downsampled sequence:', origin_seq_root, '->', target_seq_root)
