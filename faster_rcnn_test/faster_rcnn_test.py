@@ -52,7 +52,7 @@ class FRCNN_FPN(FasterRCNN):
         if isinstance(self.features, torch.Tensor):
             self.features = OrderedDict([(0, self.features)])
     
-# TODO 实现函数：
+# 实现函数：
 #   输入：检测到的中央凹部分目标原始boxes，中央凹区域在原始图像中的tlwh，原图长宽缩小比例（默认长宽缩小比例一致）
 #   输出：中央凹区域图像中检测到的所有目标的boxes，
 #       要求所有boxes均已经转换到缩小后原图的坐标位置
